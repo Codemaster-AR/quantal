@@ -3,415 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantal | 3D Printing & Software</title>
+    <title>Quantal | iOS 26 Liquid Experience</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&display=swap');
 
         :root {
-            --glass: rgba(255, 255, 255, 0.015);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --liquid-primary: #6366f1;
-            --liquid-secondary: #a855f7;
-            --liquid-tertiary: #ec4899;
+            --bg-deep: #02040a;
+            --liquid-1: #4338ca;
+            --liquid-2: #7e22ce;
+            --liquid-3: #be185d;
+            --glass-blur: blur(60px) saturate(220%);
         }
 
         body {
-            background: #010413;
-            color: #f8fafc;
-            overflow-x: hidden;
+            background-color: var(--bg-deep);
+            color: #ffffff;
             font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .background-container {
+        /* Fixed Visual Layers */
+        #visual-canvas-container {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -2;
-            background: radial-gradient(circle at 50% 50%, #0a0f1d 0%, #010413 100%);
-        }
-
-        .mesh-gradient {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             z-index: -1;
-            opacity: 0.6;
-            filter: blur(140px);
             pointer-events: none;
         }
 
-        .mesh-ball {
+        .liquid-blob {
             position: absolute;
             border-radius: 50%;
-            animation: float 25s infinite alternate ease-in-out;
+            filter: blur(120px);
+            mix-blend-mode: screen;
+            will-change: transform;
+            opacity: 0.4;
+        }
+
+        /* Upgraded Liquid Glass Effect */
+        .liquid-glass {
+            position: relative;
+            background: linear-gradient(
+                135deg, 
+                rgba(255, 255, 255, 0.05) 0%, 
+                rgba(255, 255, 255, 0.01) 100%
+            );
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 2.5rem;
+            box-shadow: 
+                0 30px 60px -12px rgba(0, 0, 0, 0.5),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            /* Removed overflow:hidden to prevent button cutting */
+        }
+
+        .liquid-glass::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0.05) 0%,
+                transparent 100%
+            );
+            pointer-events: none;
+            border-radius: 2.5rem 2.5rem 0 0;
+        }
+
+        .liquid-glass:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.07);
+            transform: scale(1.01) translateY(-10px);
+        }
+
+        .nav-glass {
+            background: rgba(2, 4, 10, 0.3);
+            backdrop-filter: blur(25px) saturate(150%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .hero-title {
+            background: linear-gradient(180deg, #fff 30%, rgba(255,255,255,0.4) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.05em;
+        }
+
+        .floating {
+            animation: float 8s ease-in-out infinite;
         }
 
         @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(10vw, 15vh) scale(1.2); }
-            100% { transform: translate(-5vw, 5vh) scale(0.9); }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
         }
 
-        #particleCanvas {
-            position: fixed;
+        section {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+        }
+
+        .content-wrap {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        #mainCanvas {
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            pointer-events: none;
         }
 
-        .glass {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-            backdrop-filter: blur(40px) saturate(180%);
-            -webkit-backdrop-filter: blur(40px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 2rem;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .glass:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-        }
-
-        .glass-nav {
-            background: rgba(1, 4, 19, 0.2);
-            backdrop-filter: blur(30px) saturate(150%);
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .hero-text { text-shadow: 0 0 40px rgba(99, 102, 241, 0.3); }
-
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-
-        .parallax-section { position: relative; transform-style: preserve-3d; }
-        .section-padding { padding: 120px 1.5rem; }
-        
-        .glow-btn {
+        /* Fix for buttons disappearing or being cut */
+        .btn-container {
             position: relative;
-            overflow: hidden;
-            transition: all 0.4s ease;
-            backdrop-filter: blur(10px);
-        }
-        
-        .glow-btn:hover {
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
-            transform: translateY(-2px);
-        }
-
-        @keyframes pulse-ring {
-            0% { transform: scale(0.8); opacity: 0.5; }
-            100% { transform: scale(2); opacity: 0; }
-        }
-        .pulse-dot::before {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: inherit;
-            border-radius: inherit;
-            animation: pulse-ring 2s infinite;
+            z-index: 20;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
 
-    <div class="background-container"></div>
-    <div class="mesh-gradient">
-        <div class="mesh-ball" style="width: 800px; height: 800px; background: var(--liquid-primary); top: -20%; left: -10%;"></div>
-        <div class="mesh-ball" style="width: 700px; height: 700px; background: var(--liquid-secondary); bottom: -10%; right: -5%; animation-delay: -7s;"></div>
-        <div class="mesh-ball" style="width: 600px; height: 600px; background: var(--liquid-tertiary); top: 30%; left: 20%; animation-duration: 25s;"></div>
+    <div id="visual-canvas-container">
+        <div class="liquid-blob" id="blob-1" style="width: 700px; height: 700px; background: var(--liquid-1); top: -200px; left: -200px;"></div>
+        <div class="liquid-blob" id="blob-2" style="width: 600px; height: 600px; background: var(--liquid-2); bottom: -100px; right: -100px;"></div>
+        <div class="liquid-blob" id="blob-3" style="width: 500px; height: 500px; background: var(--liquid-3); top: 30%; left: 40%;"></div>
+        <canvas id="mainCanvas"></canvas>
     </div>
 
-    <canvas id="particleCanvas"></canvas>
-
-    <!-- Navigation -->
-    <nav class="fixed top-0 w-full z-50 glass-nav px-8 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4 group cursor-pointer">
-            <div class="relative h-10 flex items-center justify-center">
-                <div class="absolute inset-0 bg-indigo-500 blur-xl opacity-40 group-hover:opacity-100 transition-opacity"></div>
-                <img src="https://raw.githubusercontent.com/Codemaster-AR/quantal/main/Logos/Quantal.png" alt="Logo" class="h-8 object-contain relative z-10">
+    <nav class="fixed top-0 w-full z-[100] nav-glass px-10 py-5 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
+                <div class="w-5 h-5 bg-black rounded-md"></div>
             </div>
-            <span class="text-xl font-black tracking-tighter uppercase hero-text">Quantal</span>
+            <span class="font-extrabold tracking-tighter text-xl">QUANTAL</span>
         </div>
-        <div class="flex items-center gap-6">
-            <div class="hidden lg:flex items-center gap-6 text-[10px] font-black tracking-widest text-white/40 uppercase">
-                <a href="#about" class="hover:text-white transition-colors">About</a>
-                <a href="#printing" class="hover:text-white transition-colors">Forge</a>
-                <a href="#software" class="hover:text-white transition-colors">Neural</a>
-                <a href="#lab" class="hover:text-white transition-colors">Lab</a>
-                <a href="mailto:codemaster.ar@gmail.com" class="hover:text-white transition-colors">Contact</a>
-            </div>
-            <button onclick="toggleSearch()" class="text-white/40 hover:text-white transition-all">
-                <i class="fas fa-search"></i>
-            </button>
-            <button class="glow-btn bg-white/90 text-black px-6 py-2.5 rounded-full font-black text-[10px] tracking-widest uppercase">System Login</button>
+        <div class="hidden md:flex gap-10 text-[10px] font-black tracking-[0.4em] text-white/40 uppercase">
+            <a href="#" class="hover:text-white transition-all">Interface</a>
+            <a href="#" class="hover:text-white transition-all">Systems</a>
+            <a href="#" class="hover:text-white transition-all">Laboratory</a>
         </div>
+        <button class="px-6 py-2.5 bg-white text-black text-[11px] font-black rounded-full hover:scale-105 transition-all uppercase tracking-widest">Connect</button>
     </nav>
 
-    <main id="content">
+    <main>
         <!-- Hero Section -->
-        <section class="parallax-section min-h-screen flex flex-col justify-center items-center text-center section-padding">
-            <div class="max-w-6xl" data-speed="0.1">
-                <div class="inline-flex items-center gap-3 px-5 py-2 mb-10 glass border-white/5 text-[9px] font-black tracking-[0.4em] uppercase text-indigo-400">
-                    <span class="relative flex h-2 w-2">
-                        <span class="pulse-dot absolute inline-flex h-full w-full rounded-full bg-indigo-500 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                    </span>
-                    Core Engine v2.05 Active
+        <section class="min-h-screen flex flex-col justify-center items-center text-center">
+            <div class="content-wrap" id="hero-parallax">
+                <div class="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-white/10 bg-white/5 text-[9px] font-black tracking-[0.4em] uppercase text-indigo-400 mb-10">
+                    <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+                    Operational Core v26.0
                 </div>
-                <h1 class="text-7xl md:text-[11rem] font-black mb-10 tracking-tighter hero-text bg-gradient-to-b from-white via-white to-white/5 bg-clip-text text-transparent leading-[0.8]">
-                    QUANTAL <br>STRUCTURES.
+                <h1 class="hero-title text-8xl md:text-[11rem] font-extrabold mb-10 leading-[0.85] tracking-tighter">
+                    LIQUID <br> GLASS.
                 </h1>
-                <p class="text-lg md:text-2xl text-white/40 mb-16 max-w-2xl mx-auto leading-relaxed font-light">
-                    The next evolution of <span class="text-white/90">computational fabrication</span>. 
-                    Merging software neurons with physical matter.
+                <p class="text-white/40 text-xl md:text-2xl max-w-3xl mx-auto font-light leading-relaxed tracking-tight mb-16">
+                    Refined refractive dynamics for the visionary era. <br>
+                    <span class="text-white/70">Pure depth. Zero friction.</span>
                 </p>
-                <div class="flex flex-col sm:flex-row gap-6 justify-center">
-                    <a href="#about" class="glow-btn bg-indigo-600/80 text-white px-10 py-5 rounded-full font-black text-[11px] tracking-[0.2em] uppercase">Enter Ecosystem</a>
-                    <a href="mailto:codemaster.ar@gmail.com" class="glass px-10 py-5 rounded-full font-black text-[11px] tracking-[0.2em] uppercase border-white/10">Inquire Core</a>
-                </div>
-            </div>
-        </section>
-
-        <!-- About Section -->
-        <section id="about" class="section-padding">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="grid lg:grid-cols-2 gap-10">
-                    <!-- About Widget -->
-                    <div class="glass p-12 bg-indigo-500/[0.02] border-indigo-500/10">
-                        <div class="text-[10px] font-black tracking-[0.3em] uppercase text-indigo-400 mb-6">Manifesto</div>
-                        <h2 class="text-5xl font-black tracking-tighter mb-8 uppercase">About Quantal.</h2>
-                        <div class="space-y-6 text-white/60 leading-relaxed text-lg">
-                            <p>
-                                <strong class="text-white">Quantal</strong> is a pioneering startup dedicated to synthesizing high-performance software and custom-engineered 3D printed components. We believe that hardware should be as fluid as the code that drives it.
-                            </p>
-                            <p>
-                                Whether it is immersive <span class="text-purple-400">gaming hardware</span> or high-level <span class="text-pink-400">productivity software</span>, Quantal is the central hub where you find all your digital and physical assets. We don't just build products; we redefine the materials of your workflow.
-                            </p>
-                        </div>
-                        <div class="mt-10 flex gap-4">
-                            <div class="h-12 w-12 rounded-2xl glass flex items-center justify-center text-indigo-400">
-                                <i class="fas fa-rocket"></i>
-                            </div>
-                            <div class="h-12 w-12 rounded-2xl glass flex items-center justify-center text-purple-400">
-                                <i class="fas fa-gamepad"></i>
-                            </div>
-                            <div class="h-12 w-12 rounded-2xl glass flex items-center justify-center text-pink-400">
-                                <i class="fas fa-terminal"></i>
-                            </div>
-                        </div>
+                <div class="flex gap-6 justify-center items-center">
+                    <div class="btn-container">
+                        <button class="px-10 py-5 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all">
+                            Initiate
+                        </button>
                     </div>
-
-                    <!-- System Context Widget -->
-                    <div class="flex flex-col gap-6">
-                        <div class="glass p-10 flex-1 bg-white/[0.01]">
-                            <h3 class="text-[10px] font-black tracking-[0.3em] uppercase text-white/30 mb-6">Service Scope</h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="p-4 rounded-xl bg-white/5 border border-white/5">
-                                    <div class="text-xs font-bold mb-1">Software</div>
-                                    <div class="text-[10px] text-white/40">Neural Slicing, UX Design</div>
-                                </div>
-                                <div class="p-4 rounded-xl bg-white/5 border border-white/5">
-                                    <div class="text-xs font-bold mb-1">Hardware</div>
-                                    <div class="text-[10px] text-white/40">FDM/SLA Fabrication</div>
-                                </div>
-                            </div>
-                            <div class="mt-8 text-sm text-white/30 italic">
-                                "Bridging the gap between a line of code and a physical grip."
-                            </div>
-                        </div>
-                        <div class="glass p-10 bg-indigo-500/5">
-                             <div class="text-[10px] font-black tracking-[0.3em] uppercase text-indigo-400 mb-4">Core Philosophy</div>
-                             <p class="text-sm text-white/50 leading-relaxed">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam at porttitor sem. Aliquam erat volutpat. Donec sed sem et arcu faucibus cursus.
-                             </p>
-                        </div>
+                    <div class="btn-container">
+                        <button class="px-10 py-5 liquid-glass rounded-2xl font-black text-xs uppercase tracking-widest">
+                            View Specs
+                        </button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Project Roadmap Section -->
-        <section id="roadmap" class="section-padding">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="grid lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-2 glass p-12">
-                        <h2 class="text-4xl font-black tracking-tighter mb-8 uppercase">Project Roadmap</h2>
-                        <div class="space-y-8">
-                            <div class="flex gap-6 items-start">
-                                <div class="text-indigo-400 font-bold text-sm">Q1</div>
-                                <div>
-                                    <h4 class="font-bold text-lg mb-2">Sub-Atomic Synthesis</h4>
-                                    <p class="text-white/40 text-sm leading-relaxed">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula.</p>
-                                </div>
-                            </div>
-                            <div class="flex gap-6 items-start">
-                                <div class="text-purple-400 font-bold text-sm">Q2</div>
-                                <div>
-                                    <h4 class="font-bold text-lg mb-2">Neural Link Integration</h4>
-                                    <p class="text-white/40 text-sm leading-relaxed">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.</p>
-                                </div>
-                            </div>
+        <!-- Widget Section -->
+        <section class="py-40 relative">
+            <div class="content-wrap">
+                <div class="grid md:grid-cols-3 gap-10 items-stretch">
+                    <div class="liquid-glass p-12 floating" style="animation-delay: 0s;">
+                        <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-10 border border-indigo-500/20">
+                            <i class="fas fa-microchip text-indigo-400 text-xl"></i>
                         </div>
+                        <h3 class="text-2xl font-bold mb-5 tracking-tight">Silicon Refraction</h3>
+                        <p class="text-white/40 text-base leading-relaxed font-light">
+                            Hardware-accelerated blur engines ensure every widget interacts with light in real-time.
+                        </p>
                     </div>
 
-                    <div class="flex flex-col gap-8">
-                        <div class="glass p-8 bg-indigo-500/[0.03]">
-                            <h3 class="text-[10px] font-black tracking-widest uppercase mb-6 text-indigo-400">System Log</h3>
-                            <div class="text-xs text-white/30 space-y-4 font-mono">
-                                <div>> [LOG] Core init success</div>
-                                <div>> [LOG] Neural buffer ready</div>
-                                <div>> [LOG] Thermal: Stable</div>
-                            </div>
+                    <div class="liquid-glass p-12 floating" style="animation-delay: -2.5s;">
+                        <div class="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-10 border border-purple-500/20">
+                            <i class="fas fa-layer-group text-purple-400 text-xl"></i>
                         </div>
-                        <div class="glass p-8 bg-pink-500/[0.03]">
-                            <h3 class="text-[10px] font-black tracking-widest uppercase mb-4 text-pink-400">Asset Storage</h3>
-                            <p class="text-xs text-white/40 mb-6">Pellentesque habitant morbi tristique senectus et netus et malesuada fames.</p>
-                            <button class="w-full py-3 glass border-white/5 text-[9px] font-black uppercase tracking-widest hover:bg-white/5">Access Files</button>
+                        <h3 class="text-2xl font-bold mb-5 tracking-tight">Depth Mapping</h3>
+                        <p class="text-white/40 text-base leading-relaxed font-light">
+                            Automatic Z-axis calculation prevents element collision and maintains logical hierarchy.
+                        </p>
+                    </div>
+
+                    <div class="liquid-glass p-12 floating" style="animation-delay: -5s;">
+                        <div class="w-14 h-14 rounded-2xl bg-pink-500/10 flex items-center justify-center mb-10 border border-pink-500/20">
+                            <i class="fas fa-fingerprint text-pink-400 text-xl"></i>
                         </div>
+                        <h3 class="text-2xl font-bold mb-5 tracking-tight">Neural Privacy</h3>
+                        <p class="text-white/40 text-base leading-relaxed font-light">
+                            Encrypted synaptic layers protect your identity within the liquid glass ecosystem.
+                        </p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Material Lab Section -->
-        <section id="lab" class="section-padding">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="flex flex-col lg:flex-row gap-10">
-                    <div class="lg:w-2/3 glass p-12 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 blur-[100px]"></div>
-                        <h2 class="text-5xl font-black tracking-tighter mb-6 uppercase">Material Research</h2>
-                        <p class="text-white/40 mb-10 max-w-xl">Architecting composites with structural integrity at the molecular level using Graphene-Infused Polymers.</p>
-                        
-                        <div class="grid sm:grid-cols-2 gap-6">
-                            <div class="glass p-8 bg-white/[0.02]">
-                                <i class="fas fa-layer-group text-indigo-400 mb-6 text-2xl"></i>
-                                <h4 class="font-bold mb-3 uppercase tracking-tighter">Flex-Rigid Hybrid</h4>
-                                <p class="text-sm text-white/30 font-light">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt.</p>
+        <!-- Info Section -->
+        <section class="py-40 mb-40">
+            <div class="content-wrap">
+                <div class="liquid-glass p-20 flex flex-col lg:flex-row items-center gap-20">
+                    <div class="lg:w-1/2">
+                        <div class="text-indigo-400 text-[10px] font-black tracking-[0.5em] uppercase mb-6">Environment Logic</div>
+                        <h2 class="text-5xl font-extrabold mb-8 tracking-tighter leading-tight">The interface <br>that breathes.</h2>
+                        <p class="text-white/50 text-lg leading-relaxed mb-10 font-light">
+                            Quantal isn't just a static layout. It's a living environment where every particle and color reacts to your Presence.
+                        </p>
+                        <div class="flex gap-6">
+                            <div class="flex flex-col">
+                                <span class="text-3xl font-bold">120<span class="text-sm text-white/30 ml-1">FPS</span></span>
+                                <span class="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-1">Render Speed</span>
                             </div>
-                            <div class="glass p-8 bg-white/[0.02]">
-                                <i class="fas fa-temperature-low text-purple-400 mb-6 text-2xl"></i>
-                                <h4 class="font-bold mb-3 uppercase tracking-tighter">Cryo-Stable Resins</h4>
-                                <p class="text-sm text-white/30 font-light">Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.</p>
+                            <div class="w-px h-12 bg-white/10"></div>
+                            <div class="flex flex-col">
+                                <span class="text-3xl font-bold">0.8<span class="text-sm text-white/30 ml-1">ms</span></span>
+                                <span class="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-1">Latency</span>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="lg:w-1/3 flex flex-col gap-6">
-                        <div class="glass p-10 flex-1 border-indigo-500/20 bg-indigo-500/[0.02]">
-                            <h4 class="font-black text-[10px] uppercase tracking-[0.3em] text-indigo-400 mb-8">Active Queue</h4>
-                            <div class="space-y-6">
-                                <div class="flex items-center justify-between group">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
-                                        <span class="text-sm font-medium">Turbine-X</span>
-                                    </div>
-                                    <span class="text-[10px] text-white/20 uppercase tracking-widest">42%</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-2 h-2 rounded-full bg-white/10"></div>
-                                        <span class="text-sm font-medium text-white/40">Shell-Structure-A</span>
-                                    </div>
-                                    <span class="text-[10px] text-white/10 uppercase tracking-widest">Wait</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="glass p-10 flex-1 border-pink-500/20 bg-pink-500/[0.02]">
-                            <h4 class="font-black text-[10px] uppercase tracking-[0.3em] text-pink-400 mb-6">Network Health</h4>
-                            <div class="flex items-center justify-center py-4">
-                                <i class="fas fa-satellite-dish text-5xl text-pink-400/20 animate-pulse"></i>
-                            </div>
-                        </div>
+                    <div class="lg:w-1/2 w-full h-[400px] liquid-glass bg-white/[0.02] flex items-center justify-center relative group">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2.5rem]"></div>
+                        <div class="text-8xl font-black text-white/5 italic tracking-tighter select-none">TAHOE</div>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="pt-24 pb-12 px-10 relative">
-        <div class="max-w-7xl mx-auto border-t border-white/5 pt-12">
-            <div class="flex flex-col md:flex-row justify-between items-start gap-12 mb-20">
-                <div class="max-w-sm">
-                    <div class="flex items-center gap-3 mb-6">
-                        <img src="https://raw.githubusercontent.com/Codemaster-AR/quantal/main/Logos/Quantal.png" class="h-6 object-contain opacity-80" alt="Quantal">
-                        <span class="font-black text-xl tracking-tight uppercase">Quantal.</span>
-                    </div>
-                    <p class="text-white/20 text-sm leading-relaxed font-light mb-8">Pioneering the boundary between the digital and the tangible. Built for the architects of the next century.</p>
-                    <a href="mailto:codemaster.ar@gmail.com" class="inline-flex items-center gap-3 group glass px-6 py-3 border-white/5 hover:border-indigo-500/30 transition-all">
-                        <i class="far fa-envelope text-indigo-400 group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[11px] font-black uppercase tracking-widest text-white/60">codemaster.ar@gmail.com</span>
-                    </a>
-                </div>
-            </div>
-            <div class="flex justify-between items-center text-[9px] font-black text-white/10 uppercase tracking-[0.3em]">
-                <span>© 2026 QUANTAL TECH</span>
-                <div class="flex gap-6">
-                    <a href="#">Security</a>
-                    <a href="#">Status</a>
-                </div>
+    <footer class="py-20 border-t border-white/5">
+        <div class="content-wrap flex flex-col md:flex-row justify-between items-center gap-10 opacity-30 text-[10px] font-bold tracking-[0.4em] uppercase">
+            <span>© 2026 Quantal Logic</span>
+            <div class="flex gap-10">
+                <a href="#">Security</a>
+                <a href="#">Nodes</a>
             </div>
         </div>
     </footer>
 
     <script>
-        const canvas = document.getElementById('particleCanvas');
+        const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
-        const particleCount = 220; 
-        const colors = ['#6366f1', '#a855f7', '#ec4899', '#0ea5e9', '#ffffff'];
-        const mouseRadius = 220;
-        let mouse = { x: -1000, y: -1000 };
+        let mouse = { x: -2000, y: -2000 };
+        let scrollY = window.pageYOffset;
+
+        const PARTICLE_COUNT = 150;
+        const MOUSE_RADIUS = 300;
 
         class Particle {
-            constructor() { this.init(); }
+            constructor() {
+                this.init();
+            }
             init() {
-                this.homeX = Math.random() * canvas.width;
-                this.homeY = Math.random() * canvas.height;
-                this.x = this.homeX;
-                this.y = this.homeY;
-                this.size = Math.random() * 1.5 + 0.5;
-                this.color = colors[Math.floor(Math.random() * colors.length)];
-                this.originalOpacity = Math.random() * 0.3 + 0.05;
-                this.opacity = this.originalOpacity;
-                this.vx = 0; this.vy = 0;
-                this.friction = 0.91; this.spring = 0.012;
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.originX = this.x;
+                this.originY = this.y;
+                this.size = Math.random() * 2 + 0.5;
+                this.color = `rgba(255, 255, 255, ${Math.random() * 0.3 + 0.1})`;
+                this.vx = 0;
+                this.vy = 0;
             }
             update() {
-                this.vx += (this.homeX - this.x) * this.spring;
-                this.vy += (this.homeY - this.y) * this.spring;
-                const dxMouse = this.x - mouse.x;
-                const dyMouse = this.y - mouse.y;
-                const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
-                if (distMouse < mouseRadius) {
-                    const angle = Math.atan2(dyMouse, dxMouse);
-                    const force = (mouseRadius - distMouse) / mouseRadius;
-                    this.vx += Math.cos(angle) * force * 14;
-                    this.vy += Math.sin(angle) * force * 14;
-                    this.opacity = Math.min(0.8, this.opacity + 0.08);
-                } else if (this.opacity > this.originalOpacity) {
-                    this.opacity -= 0.01;
+                const pY = scrollY * 0.15;
+                const actualY = (this.y - pY + canvas.height * 2) % canvas.height;
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - actualY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                this.vx += (this.originX - this.x) * 0.001;
+                this.vy += (this.originY - this.y) * 0.001;
+                if (distance < MOUSE_RADIUS) {
+                    const force = (MOUSE_RADIUS - distance) / MOUSE_RADIUS;
+                    const angle = Math.atan2(dy, dx);
+                    this.vx -= Math.cos(angle) * force * 5;
+                    this.vy -= Math.sin(angle) * force * 5;
                 }
-                this.vx *= this.friction; this.vy *= this.friction;
-                this.x += this.vx; this.y += this.vy;
+                this.vx *= 0.95;
+                this.vy *= 0.95;
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
             }
             draw() {
+                const pY = scrollY * 0.15;
+                const actualY = (this.y - pY + canvas.height * 2) % canvas.height;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.arc(this.x, actualY, this.size, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
-                ctx.globalAlpha = this.opacity;
                 ctx.fill();
             }
         }
@@ -419,27 +327,42 @@
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            particles = [];
-            for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+            particles = Array.from({ length: PARTICLE_COUNT }, () => new Particle());
         }
 
         window.addEventListener('resize', resize);
-        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
-        resize();
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        window.addEventListener('scroll', () => {
+            scrollY = window.pageYOffset;
+            const hero = document.getElementById('hero-parallax');
+            if(hero) {
+                hero.style.transform = `translateY(${scrollY * 0.35}px)`;
+                hero.style.opacity = Math.max(0, 1 - (scrollY / 700));
+            }
+            document.getElementById('blob-1').style.transform = `translateY(${scrollY * 0.05}px) rotate(${scrollY * 0.01}deg)`;
+            document.getElementById('blob-2').style.transform = `translateY(${scrollY * -0.1}px) rotate(${scrollY * -0.005}deg)`;
+            document.getElementById('blob-3').style.transform = `translateY(${scrollY * 0.02}px)`;
+        });
 
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const b1 = document.getElementById('blob-1');
+            const mx = (mouse.x - window.innerWidth/2) * 0.03;
+            const my = (mouse.y - window.innerHeight/2) * 0.03;
+            if(b1) {
+                b1.style.left = `calc(-200px + ${mx}px)`;
+                b1.style.top = `calc(-200px + ${my}px)`;
+            }
             particles.forEach(p => { p.update(); p.draw(); });
             requestAnimationFrame(animate);
         }
-        animate();
 
-        window.addEventListener('scroll', () => {
-            const scrolled = window.pageYOffset;
-            document.querySelectorAll('[data-speed]').forEach(el => {
-                el.style.transform = `translateY(${scrolled * el.getAttribute('data-speed')}px)`;
-            });
-        });
+        resize();
+        animate();
     </script>
 </body>
 </html>
